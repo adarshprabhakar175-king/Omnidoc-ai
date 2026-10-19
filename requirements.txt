@@ -1,0 +1,22 @@
+# Core API and Web Framework
+fastapi>=0.110.0
+uvicorn>=0.28.0
+streamlit>=1.32.0
+
+# Document Processing
+pypdf>=4.1.0
+
+# Google Gemini AI SDK
+google-generativeai>=0.8.0
+google-genai>=0.1.0
+
+# Data Validation & Environment
+pydantic>=2.6.4
+python-dotenv>=1.0.1
+requests>=2.31.0
+
+# LangChain & Vector Store (Optional / Hybrid)
+langchain>=0.1.16
+langchain-community>=0.0.32
+langchain-google-genai>=1.0.1
+chromadb>=0.4.24
