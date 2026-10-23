@@ -1,19 +1,74 @@
 import os
+import re
 import unicodedata
 from pathlib import Path
 from typing import Dict, Any, List
 from pypdf import PdfReader
 
 def clean_text(text: str) -> str:
-    """Normalize unicode characters (e.g. ligatures fi, fl) and clean control chars."""
+    """Normalize unicode characters and clean whitespace/control chars."""
     if not text:
         return ""
     normalized = unicodedata.normalize("NFKD", text)
-    return normalized
+    # Replace non-breaking spaces and excessive whitespace
+    normalized = re.sub(r'[ \t]+', ' ', normalized)
+    normalized = re.sub(r'\n{3,}', '\n\n', normalized)
+    return normalized.strip()
+
+def chunk_page_text(page_text: str, doc_name: str, page_num: int, chunk_size: int = 1000, overlap: int = 150) -> List[Dict[str, Any]]:
+    """
+    Splits page text into sliding-window chunks with page & doc metadata.
+    Preserves paragraph and sentence boundaries wherever possible.
+    """
+    if not page_text:
+        return []
+
+    chunks = []
+    start = 0
+    text_len = len(page_text)
+    chunk_idx = 1
+
+    while start < text_len:
+        end = start + chunk_size
+        if end >= text_len:
+            chunk_slice = page_text[start:text_len].strip()
+            if chunk_slice:
+                chunks.append({
+                    "chunk_id": f"{doc_name}_p{page_num}_c{chunk_idx}",
+                    "doc_name": doc_name,
+                    "page": page_num,
+                    "text": chunk_slice,
+                    "clean_lower": chunk_slice.lower()
+                })
+            break
+
+        # Try to break at a newline or period near the end
+        boundary = page_text.rfind('\n', start + overlap, end)
+        if boundary == -1:
+            boundary = page_text.rfind('. ', start + overlap, end)
+        if boundary != -1 and boundary > start:
+            end = boundary + 1
+
+        chunk_slice = page_text[start:end].strip()
+        if chunk_slice:
+            chunks.append({
+                "chunk_id": f"{doc_name}_p{page_num}_c{chunk_idx}",
+                "doc_name": doc_name,
+                "page": page_num,
+                "text": chunk_slice,
+                "clean_lower": chunk_slice.lower()
+            })
+            chunk_idx += 1
+
+        start = end - overlap
+        if start < 0:
+            start = 0
+
+    return chunks
 
 def extract_document_content(file_path: str, filename: str = "") -> Dict[str, Any]:
     """
-    Extracts text and page-level metadata from PDF, TXT, and Markdown files.
+    Extracts text, page-level metadata, and semantic chunks from PDF, TXT, and Markdown files.
     Injects clear page demarcations for multi-page citation mapping.
     """
     if not os.path.exists(file_path):
@@ -23,6 +78,7 @@ def extract_document_content(file_path: str, filename: str = "") -> Dict[str, An
     ext = Path(file_path).suffix.lower()
 
     pages: List[Dict[str, Any]] = []
+    all_chunks: List[Dict[str, Any]] = []
     full_text_parts: List[str] = []
 
     if ext == ".pdf":
@@ -36,19 +92,23 @@ def extract_document_content(file_path: str, filename: str = "") -> Dict[str, An
                 "page": page_num,
                 "text": page_text
             })
-            if page_text.strip():
-                full_text_parts.append(f"--- Page {page_num} ---\n{page_text.strip()}\n")
+            if page_text:
+                full_text_parts.append(f"--- [{filename}] Page {page_num} ---\n{page_text}\n")
+                chunks = chunk_page_text(page_text, filename, page_num)
+                all_chunks.extend(chunks)
     elif ext in [".txt", ".md"]:
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            content = f.read()
+            content = clean_text(f.read())
         pages.append({
             "page": 1,
             "text": content
         })
-        full_text_parts.append(f"--- Page 1 ---\n{content}\n")
+        full_text_parts.append(f"--- [{filename}] Page 1 ---\n{content}\n")
+        chunks = chunk_page_text(content, filename, 1)
+        all_chunks.extend(chunks)
         total_pages = 1
     else:
-        raise ValueError(f"Unsupported file format: {ext}. Only PDF and TXT files are supported.")
+        raise ValueError(f"Unsupported file format: {ext}. Only PDF, TXT, and Markdown files are supported.")
 
     full_text = "\n".join(full_text_parts)
     word_count = len(full_text.split())
@@ -60,33 +120,48 @@ def extract_document_content(file_path: str, filename: str = "") -> Dict[str, An
         "total_chars": total_chars,
         "word_count": word_count,
         "pages": pages,
+        "chunks": all_chunks,
         "full_text": full_text
     }
 
-def find_relevant_page_citations(pages: List[Dict[str, Any]], query: str, max_citations: int = 3) -> List[Dict[str, Any]]:
+def find_relevant_citations(chunks: List[Dict[str, Any]], query: str, max_citations: int = 4) -> List[Dict[str, Any]]:
     """
-    Finds pages most relevant to the query to provide verified citations.
+    Finds chunks most relevant to the query to provide verified citations with document and page numbers.
     """
-    query_tokens = [w.lower() for w in query.split() if len(w) > 3]
-    if not query_tokens:
-        query_tokens = [w.lower() for w in query.split()]
+    if not chunks:
+        return []
 
-    scored_pages = []
-    for page_data in pages:
-        p_text = page_data.get("text", "")
-        p_lower = p_text.lower()
-        score = sum(p_lower.count(token) for token in query_tokens)
+    tokens = [w.lower() for w in re.findall(r'\b\w{3,}\b', query)]
+    if not tokens:
+        tokens = [w.lower() for w in query.split()]
+
+    scored = []
+    for chunk in chunks:
+        c_text = chunk.get("clean_lower", "")
+        # Score based on frequency and keyword occurrence
+        score = sum(c_text.count(t) for t in tokens)
+        # Bonus for exact query phrase match
+        if query.lower() in c_text:
+            score += 10
         if score > 0:
-            scored_pages.append((score, page_data["page"], p_text))
+            scored.append((score, chunk))
 
-    scored_pages.sort(key=lambda x: x[0], reverse=True)
+    scored.sort(key=lambda x: x[0], reverse=True)
 
     citations = []
-    for _, page_num, p_text in scored_pages[:max_citations]:
-        snippet = " ".join(p_text.strip().split()[:60]) + "..."
+    seen = set()
+    for _, ch in scored:
+        key = (ch["doc_name"], ch["page"])
+        if key in seen:
+            continue
+        seen.add(key)
+        snippet = " ".join(ch["text"].split()[:50]) + "..."
         citations.append({
-            "page": page_num,
+            "doc_name": ch["doc_name"],
+            "page": ch["page"],
             "snippet": snippet
         })
+        if len(citations) >= max_citations:
+            break
 
     return citations

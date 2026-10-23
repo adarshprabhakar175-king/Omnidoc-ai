@@ -1,7 +1,26 @@
-.venv/
+# Virtual Environment
 venv/
-__pycache__/
-*.pyc
-chroma_db/
-uploaded_pdfs/
+env/
+ENV/
+.venv/
+
+# Environment Variables & Secrets (CRITICAL: Never push API keys!)
 .env
+*.env.local
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Vector Database & Temporary Cache
+chroma_db/
+data/vector_store/
+data/vector_store_v2/
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

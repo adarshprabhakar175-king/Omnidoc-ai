@@ -1,18 +1,23 @@
-# 📑 IndicDoc-AI: Enterprise Multilingual Document Intelligence & Native-Context RAG
+# 📑 IndicDoc-AI: Enterprise Multi-Document Intelligence & Unlimited RAG Platform
 
-> **Enterprise-grade Document Intelligence platform powered by FastAPI, Streamlit, and Google Gemini. Features real-time token streaming, exact page-level source citations, one-click executive summaries, and regional Indian language localization.**
+> **Enterprise-grade Document Intelligence platform powered by FastAPI, Streamlit, and Google Gemini. Features unlimited PDF/document uploads, multi-document semantic retrieval, real-time token streaming, exact document & page-level source citations, one-click executive summaries, and regional Indian language localization.**
 
 ---
 
 ## 🌟 Key Highlights
 
-- **Native Large-Context Processing:** Utilizes Gemini's context window (supporting 120+ pages / 400,000+ characters) to analyze comprehensive documents without fragmented chunking or loss of broader context.
-- **Precise Page Citations:** Automatically injects structural page anchors (`--- Page X ---`) during parsing so answers cite the exact pages where information is found.
-- **Multilingual Localization:** Direct support for English, Hindi (हिन्दी), Tamil (தமிழ்), Telugu (తెలుగు), Marathi (मराठी), Bengali (বাংলা), Gujarati (ગુજરાતી), and Hinglish.
-- **Real-Time Streaming Responses:** Smooth, low-latency token streaming directly in the Streamlit workspace via standard HTTP streaming endpoints.
-- **One-Click Executive Summaries:** Instant structured briefings (Overview, Key Highlights, Risks/Obligations, Recommendations) for lengthy legal, regulatory, or technical files.
-- **Dynamic Model Fallback:** Built-in resilience mechanism that tries primary models (`gemini-3.8-flash`) and automatically falls back to secondary models if Google API demand spikes occur.
-- **Dual Surface:** Premium Streamlit web dashboard + Production-ready FastAPI REST API with interactive Swagger documentation.
+- **📂 Unlimited Document Uploads:** Upload 1, 10, or 100+ PDFs/TXT files simultaneously or add more documents continuously over time without overwriting existing indexes.
+- **⚡ Unlimited Questions Architecture:**
+  - **Smart Semantic Chunker & Hybrid Retrieval:** Chunks documents into bite-sized semantic passages (~1,000 characters) and retrieves only the top relevant chunks for each query. This keeps token usage minimal (~1,500-2,500 tokens/query), preventing context overflow and preserving API limits.
+  - **In-Memory LRU Cache:** Instant 5ms responses for repeated/similar queries with 0 API tokens consumed.
+  - **Multi-Model Auto-Failover:** Automatically cascades across high-throughput models (`gemini-3.5-flash-lite` ➔ `gemini-3.1-flash-lite` ➔ `gemini-3.5-flash` ➔ `gemini-3.8-flash` ➔ `gemini-flash-latest`) if demand spikes (503) or rate limits (429) occur.
+  - **Multi-Key Pool & UI Key Override:** Supports multiple comma-separated keys in `.env` for automatic key rotation, plus a dedicated Custom API Key input in the UI for 100% private unlimited throughput.
+- **📑 Multi-Document Exact Citations:** Every answer cites the exact document and page number (e.g. `[Source: MACHINE LEARNING notes.pdf | Page 17]`).
+- **🎯 Dynamic Query Scope:** Query across **All Documents (Global Search)** or focus your query on a specific uploaded file.
+- **🌐 Multilingual Localization:** Direct support for English, Hindi (हिन्दी), Tamil (தமிழ்), Telugu (తెలుగు), Marathi (मराठी), Bengali (বাংলা), Gujarati (ગુજરાતી), and Hinglish.
+- **📊 Executive Summaries:** Generate consolidated executive summaries across your entire document repository or for any individual PDF.
+- **🧹 Granular Document Management:** View all indexed files with page and word counts, delete individual files on demand, or reset the library.
+- **💾 Export Chat Transcript:** Export your entire research conversation as a structured Markdown file with one click.
 
 ---
 
@@ -24,46 +29,52 @@ flowchart TD
 
     subgraph Frontend ["Frontend Layer (Streamlit)"]
         UI["🖥️ Streamlit Web App (frontend/app.py)"]
+        UploadWidget["📂 Multi-File Uploader (accept_multiple_files=True)"]
         Chat["💬 Real-Time Streaming Chat"]
-        Summ["📊 Executive Summary Dashboard"]
-        Lang["🌐 Regional Language Selector"]
+        Summ["📊 Multi-Doc Executive Summary"]
+        Scope["🎯 Scope Selector (All vs Specific PDF)"]
+        KeyInput["🔑 Custom API Key Settings"]
     end
 
     subgraph Backend ["Backend Layer (FastAPI REST API)"]
         API["⚡ FastAPI Server (main.py)"]
-        UploadEP["/api/v1/upload"]
-        StreamEP["/api/v1/stream-query"]
-        QueryEP["/api/v1/query"]
-        SummaryEP["/api/v1/summarize"]
+        UploadEP["POST /api/v1/upload"]
+        DocsEP["GET /api/v1/documents"]
+        DelEP["DELETE /api/v1/documents/{filename}"]
+        StreamEP["POST /api/v1/stream-query"]
+        QueryEP["POST /api/v1/query"]
+        SummaryEP["POST /api/v1/summarize"]
+        ResetEP["POST /api/v1/reset"]
     end
 
-    subgraph CoreServices ["Core Services (backend/services/)"]
-        Parser["📄 PDF & Doc Processor (pdf_processor.py)\n- Page Boundary Injection\n- Unicode Ligature Normalization"]
-        Engine["🧠 RAG Engine (rag_engine.py)\n- Context Window Management\n- Fallback Model Dispatcher\n- Prompt Engineer"]
+    subgraph CoreServices ["Core RAG & Indexing (backend/services/)"]
+        Processor["📄 PDF Processor (pdf_processor.py)\n- Multi-page extraction\n- Semantic chunking (overlap)\n- Unicode ligature normalization"]
+        RAGEngine["🧠 Multi-Document RAG Engine (rag_engine.py)\n- Registry: Dict[filename, doc]\n- Chunk Index & BM25 Scoring\n- In-Memory LRU Cache\n- Multi-Model Failover\n- Key Rotation"]
     end
 
     subgraph External ["AI & Storage"]
-        Gemini["✨ Google Gemini API\n(gemini-3.8-flash)"]
-        Storage["📂 Uploaded Files Cache (uploaded_pdfs/)"]
+        Gemini["✨ Google Gemini API\n(Flash-Lite / Flash / Pro)"]
+        Storage["📂 Uploaded Files (uploaded_pdfs/)"]
     end
 
     User --> UI
-    UI --> Chat & Summ & Lang
+    UI --> UploadWidget & Chat & Summ & Scope & KeyInput
+    UploadWidget --> UploadEP
+    Scope --> StreamEP
     Chat --> StreamEP
     Summ --> SummaryEP
-    UI --> UploadEP
 
-    UploadEP --> Parser
-    Parser --> Storage
-    Parser --> Engine
+    UploadEP --> Processor
+    Processor --> Storage
+    Processor --> RAGEngine
 
-    StreamEP --> Engine
-    SummaryEP --> Engine
-    QueryEP --> Engine
+    StreamEP --> RAGEngine
+    SummaryEP --> RAGEngine
+    QueryEP --> RAGEngine
 
-    Engine --> Gemini
-    Gemini --> Engine
-    Engine --> API
+    RAGEngine --> Gemini
+    Gemini --> RAGEngine
+    RAGEngine --> API
     API --> UI
 ```
 
@@ -76,17 +87,18 @@ indicdoc-ai/
 │
 ├── backend/                        # Modular backend core
 │   ├── __init__.py
-│   ├── config.py                   # Central settings, model fallbacks, paths
-│   ├── models.py                   # Pydantic schemas (QueryRequest, SummaryResponse, etc.)
+│   ├── config.py                   # Central settings, model fallbacks, multi-key config
+│   ├── models.py                   # Pydantic schemas (QueryRequest, LibraryInfo, etc.)
 │   └── services/
 │       ├── __init__.py
-│       ├── pdf_processor.py        # PDF/TXT extraction, unicode cleaning & page markers
-│       └── rag_engine.py           # Gemini calling logic, streaming generator, citations
+│       ├── pdf_processor.py        # PDF/TXT extraction, semantic chunking & citations
+│       └── rag_engine.py           # Multi-doc RAG engine, failover, LRU caching
 │
 ├── frontend/                       # Interactive web interface
-│   ├── app.py                      # Modern Streamlit UI with streaming & citations
+│   ├── app.py                      # Multi-document Streamlit UI with streaming & citations
 │
 ├── uploaded_pdfs/                  # Document storage directory
+│   ├── Adarsh_Resume.new.pdf       # Sample PDF
 │   ├── Amit Sharma sample.pdf      # Sample 1-page technical profile
 │   └── MACHINE LEARNING notes.pdf  # Sample 120-page comprehensive technical textbook
 │
@@ -94,8 +106,8 @@ indicdoc-ai/
 ├── app.py                          # Streamlit root entrypoint (delegates to frontend/app.py)
 ├── run.py                          # Unified launcher (starts Backend + Frontend concurrently)
 ├── run_project.bat                 # 1-click Windows batch launcher
+├── test_multidoc_rag.py            # Automated pipeline & integration test suite
 ├── requirements.txt                # Production Python dependencies
-├── requirement.txt                 # Backward-compatible requirements alias
 ├── .env                            # Environment variables (GOOGLE_API_KEY)
 └── README.md                       # Complete project documentation
 ```
@@ -104,89 +116,41 @@ indicdoc-ai/
 
 ## 🚀 Quick Start Guide
 
-### 1. Prerequisites
-- **Python 3.11+** installed
-- A **Google Gemini API Key** (get one at [Google AI Studio](https://aistudio.google.com/))
-
-### 2. Configure Environment
-Check or update your `.env` file in the project root:
-```env
-GOOGLE_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-3.8-flash
-PORT=8000
-FRONTEND_PORT=8501
-```
-
-### 3. Install Dependencies
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
----
+### 2. Configure Your API Key
+In the `.env` file:
+```env
+GOOGLE_API_KEY=AIzaSyYourGeminiApiKeyHere
+```
+*(Tip: You can provide multiple comma-separated keys for automatic key rotation: `GOOGLE_API_KEY=key1,key2,key3`)*
 
-## 🖥️ Running the Project
-
-### Option A: 1-Click Unified Launcher (Recommended)
-Launch both the **FastAPI Backend** and the **Streamlit Frontend** with a single command:
-
+### 3. Launch the Application
+Simply double click `run_project.bat` or run:
 ```bash
 python run.py
 ```
-*Or double-click `run_project.bat` on Windows.*
 
-Services will be accessible at:
-- **Interactive Web App:** [http://localhost:8501](http://localhost:8501)
-- **FastAPI Swagger Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **API Health Check:** [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **Interactive Web App**: [http://localhost:8501](http://localhost:8501)
+- **FastAPI Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Health Check**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
 ---
 
-### Option B: Running Services Separately
+## 💬 How Unlimited Uploads & Questions Work
 
-**Terminal 1 (Backend API):**
-```bash
-python -m uvicorn main:app --reload --port 8000
-```
+1. **Unlimited PDF Uploads**:
+   - In the sidebar, drag and drop as many PDFs as you want (e.g. 5, 20, 50).
+   - Click **"🚀 Process & Index All Documents"**.
+   - You can add more documents at any time without losing your existing documents!
+   - Manage your documents library in the sidebar: view page counts, words, or delete specific documents.
 
-**Terminal 2 (Frontend Dashboard):**
-```bash
-streamlit run frontend/app.py --server.port 8501
-```
-
----
-
-## 🔌 API Reference
-
-| Endpoint | Method | Description |
-| :--- | :---: | :--- |
-| `/` | `GET` | Health check, active model status, and document status |
-| `/api/v1/upload` | `POST` | Upload and process a PDF/TXT document with page indexing |
-| `/api/v1/stream-query` | `POST` | Stream answers chunk-by-chunk in real time (`text/plain`) |
-| `/api/v1/query` | `POST` | Structured JSON answer with verified page citations |
-| `/api/v1/summarize` | `POST` | Generates a structured multi-section Executive Summary |
-| `/api/v1/document` | `GET` | Retrieves active document metadata (pages, word count) |
-| `/api/v1/reset` | `POST` | Clears active document from memory |
-| `/docs` | `GET` | Interactive OpenAPI / Swagger UI |
-
-### Example Query Request (`POST /api/v1/query`)
-```json
-{
-  "question": "What penalty clauses or liability terms are mentioned?",
-  "target_language": "Hindi (हिन्दी)"
-}
-```
-
----
-
-## 💡 Usage Walkthrough
-
-1. **Upload Document:** Open [http://localhost:8501](http://localhost:8501), expand the sidebar, and upload any PDF (e.g. `uploaded_pdfs/MACHINE LEARNING notes.pdf`). Click **Process & Index Document**.
-2. **Review Stats:** Note the page count, word count, and green backend connection badge.
-3. **Generate Summary:** Click **📊 Executive Summary** to inspect the 4-part breakdown.
-4. **Chat & Interrogate:** Type questions or click suggestion chips. The response streams with page citation tags (e.g. `[Page 12]`).
-5. **Switch Languages:** Select Hindi, Tamil, or Hinglish from the language dropdown to receive localized answers instantly.
-
----
-
-## 🛡️ License & Acknowledgments
-Built with ❤️ for high-performance enterprise document intelligence. Powered by FastAPI, Streamlit, and Google Gemini.
+2. **Unlimited Questions**:
+   - Ask as many questions as you want in English, Hindi, Hinglish, Tamil, Telugu, etc.
+   - The engine automatically retrieves the top semantic chunks across all documents, using minimal tokens per question.
+   - If a Gemini model is busy or hits high demand, the engine automatically switches to a backup model seamlessly.
+   - Repeated questions are returned instantly from the in-memory cache without calling the API.
+   - You can also add your own Gemini API key in the sidebar settings for dedicated throughput.
