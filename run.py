@@ -7,7 +7,7 @@ import signal
 def main():
     python_exe = sys.executable
     print("=" * 65)
-    print(" 📑 IndicDoc-AI: Unified Application Launcher")
+    print(" 📑 OmniDoc AI: Unified Application Launcher")
     print("=" * 65)
     print(f"[*] Python Runtime: {python_exe}")
     print("[*] Starting Backend (FastAPI on http://127.0.0.1:8000)...")
@@ -24,7 +24,7 @@ def main():
     frontend_proc = subprocess.Popen(frontend_cmd)
 
     print("\n" + "=" * 65)
-    print(" 🚀 IndicDoc-AI is LIVE!")
+    print(" 🚀 OmniDoc AI is LIVE!")
     print(" -------------------------------------------------------------")
     print(" 🌐 Interactive Web UI : http://localhost:8501")
     print(" 📖 REST API Swagger   : http://127.0.0.1:8000/docs")
@@ -40,7 +40,7 @@ def main():
             if backend_proc.poll() is not None or frontend_proc.poll() is not None:
                 break
     except KeyboardInterrupt:
-        print("\n[!] Shutting down IndicDoc-AI services...")
+        print("\n[!] Shutting down OmniDoc AI services...")
     finally:
         for p, name in [(backend_proc, "Backend"), (frontend_proc, "Frontend")]:
             if p and p.poll() is None:

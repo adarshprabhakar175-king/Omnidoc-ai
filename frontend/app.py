@@ -8,7 +8,7 @@ BASE_HEALTH_URL = "http://localhost:8000"
 
 # Page Configuration
 st.set_page_config(
-    page_title="IndicDoc-AI | Enterprise Multi-Document Intelligence",
+    page_title="OmniDoc AI | Enterprise Multi-Document Intelligence",
     page_icon="📑",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -140,7 +140,7 @@ if "custom_api_key" not in st.session_state:
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### 📑 IndicDoc-AI")
+    st.markdown("### 📑 OmniDoc AI")
     
     if backend_online:
         active_model = backend_meta.get("active_model", "Gemini 3.5 Flash")
@@ -289,7 +289,7 @@ with st.sidebar:
 
     # 4. Unlimited API Configuration (Optional custom API Key)
     with st.expander("🔑 Unlimited API Key Settings (Optional)"):
-        st.caption("IndicDoc-AI includes automatic multi-model failover & caching. You can also paste your personal Gemini API key here for 100% dedicated unlimited throughput.")
+        st.caption("OmniDoc AI includes automatic multi-model failover & caching. You can also paste your personal Gemini API key here for 100% dedicated unlimited throughput.")
         custom_key_input = st.text_input(
             "Custom Google Gemini API Key",
             value=st.session_state.custom_api_key,
@@ -301,10 +301,10 @@ with st.sidebar:
             st.toast("Custom API key saved!")
 
     st.markdown("---")
-    st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.8rem;'>IndicDoc-AI v2.5 • Multi-PDF Semantic RAG</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #64748b; font-size: 0.8rem;'>OmniDoc AI v2.5 • Multi-PDF Semantic RAG</p>", unsafe_allow_html=True)
 
 # Main Application Area
-st.markdown('<p class="main-header">📑 IndicDoc-AI</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">📑 OmniDoc AI</p>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Unlimited Document Intelligence • Multi-PDF RAG • Page Citations & Multilingual Chat.</p>', unsafe_allow_html=True)
 
 # Active Search Scope Banner
@@ -383,13 +383,13 @@ if active_query:
 # Export Chat History Button (if messages exist)
 if st.session_state.messages:
     st.markdown("---")
-    chat_export_text = "# IndicDoc-AI Chat Transcript\n\n"
+    chat_export_text = "# OmniDoc AI Chat Transcript\n\n"
     for m in st.session_state.messages:
         role = "### User" if m["role"] == "user" else "### Assistant"
         chat_export_text += f"{role}\n{m['content']}\n\n"
     st.download_button(
         label="💾 Export Chat Transcript (.md)",
         data=chat_export_text,
-        file_name="indicdoc_chat_transcript.md",
+        file_name="omnidoc_chat_transcript.md",
         mime="text/markdown"
     )

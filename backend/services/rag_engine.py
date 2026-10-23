@@ -238,7 +238,7 @@ class MultiDocumentRAGEngine:
                 f"Respond fully, accurately, and fluently in {target_language}. Keep key technical or legal terms clear."
             )
 
-        prompt = f"""You are IndicDoc-AI, an enterprise document intelligence and multi-PDF analytics assistant.
+        prompt = f"""You are OmniDoc AI, an enterprise document intelligence and multi-PDF analytics assistant.
 Analyze the provided excerpts across uploaded documents to answer the user's question accurately.
 
 CORE INSTRUCTIONS:
@@ -378,7 +378,7 @@ ACCURATE MULTI-DOC ANSWER WITH CITATIONS:"""
             context = "\n\n".join(summary_parts)[:300000]
             header = f"Consolidated Executive Summary across {len(self.documents)} Documents ({total_pages} total pages)"
 
-        prompt = f"""You are IndicDoc-AI, an expert enterprise document intelligence and research analyst.
+        prompt = f"""You are OmniDoc AI, an expert enterprise document intelligence and research analyst.
 Generate a structured, professional Executive Summary based on the provided document content.
 Title: {header}
 

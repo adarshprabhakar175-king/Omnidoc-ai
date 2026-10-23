@@ -1,4 +1,4 @@
-# 📑 IndicDoc-AI: Enterprise Multi-Document Intelligence & Unlimited RAG Platform
+# 📑 OmniDoc AI: Enterprise Multi-Document Intelligence & Unlimited RAG Platform
 
 > **Enterprise-grade Document Intelligence platform powered by FastAPI, Streamlit, and Google Gemini. Features unlimited PDF/document uploads, multi-document semantic retrieval, real-time token streaming, exact document & page-level source citations, one-click executive summaries, and regional Indian language localization.**
 
@@ -28,7 +28,7 @@ flowchart TD
     User([👤 User / Enterprise Client])
 
     subgraph Frontend ["Frontend Layer (Streamlit)"]
-        UI["🖥️ Streamlit Web App (frontend/app.py)"]
+        UI["🖥️ OmniDoc Web App (frontend/app.py)"]
         UploadWidget["📂 Multi-File Uploader (accept_multiple_files=True)"]
         Chat["💬 Real-Time Streaming Chat"]
         Summ["📊 Multi-Doc Executive Summary"]
@@ -49,7 +49,7 @@ flowchart TD
 
     subgraph CoreServices ["Core RAG & Indexing (backend/services/)"]
         Processor["📄 PDF Processor (pdf_processor.py)\n- Multi-page extraction\n- Semantic chunking (overlap)\n- Unicode ligature normalization"]
-        RAGEngine["🧠 Multi-Document RAG Engine (rag_engine.py)\n- Registry: Dict[filename, doc]\n- Chunk Index & BM25 Scoring\n- In-Memory LRU Cache\n- Multi-Model Failover\n- Key Rotation"]
+        RAGEngine["🧠 OmniDoc RAG Engine (rag_engine.py)\n- Registry: Dict[filename, doc]\n- Chunk Index & BM25 Scoring\n- In-Memory LRU Cache\n- Multi-Model Failover\n- Key Rotation"]
     end
 
     subgraph External ["AI & Storage"]
@@ -83,7 +83,7 @@ flowchart TD
 ## 📁 Project Structure
 
 ```
-indicdoc-ai/
+omnidoc-ai/
 │
 ├── backend/                        # Modular backend core
 │   ├── __init__.py

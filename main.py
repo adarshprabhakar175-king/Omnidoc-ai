@@ -22,7 +22,7 @@ from backend.services.rag_engine import rag_engine
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="IndicDoc-AI | Enterprise Multi-Document Intelligence API",
+    title="OmniDoc AI | Enterprise Multi-Document Intelligence API",
     description="High-performance Multi-PDF RAG and Document Intelligence engine powered by Google Gemini with regional language localization and infinite querying.",
     version="2.5.0"
 )
@@ -57,7 +57,7 @@ def health_check():
     info = rag_engine.get_documents_info()
     return {
         "status": "healthy",
-        "service": "IndicDoc-AI",
+        "service": "OmniDoc AI",
         "active_model": rag_engine.active_model_name,
         "total_documents": info["total_documents"],
         "total_pages": info["total_pages"],
